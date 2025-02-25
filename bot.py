@@ -1,4 +1,5 @@
 # read env
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
 import telebot
@@ -28,6 +29,60 @@ def send_welcome(message):
 		"что писать просто задай мне тему для поста и я пришлю тебе варианты для поста.")
 	)
 	bot_commands.create_commands(message)
+
+@bot.callback_query_handler(func=lambda call: call.data == "timer")
+def callback_timer_handler(call):
+    bot.send_message(call.message.chat.id, "Установи время и частоту публикаций")
+    bot_commands.add_scheduler(call.message)
+
+@bot.callback_query_handler(func=lambda call: call.data in ["set_time", "set_interval", "start_schedule"])
+def callback_schedule(call):
+    chat_id = call.message.chat.id
+
+    if call.data == "set_time":
+        bot.answer_callback_query(call.id)
+        msg = bot.send_message(chat_id, "Введите время для первой публикации в формате ЧЧ:ММ (например, 15:30):")
+        bot.register_next_step_handler(msg, process_time_input)
+    elif call.data == "set_interval":
+        bot.answer_callback_query(call.id)
+        msg = bot.send_message(chat_id, "Введите интервал публикаций в минутах (например, 60):")
+        bot.register_next_step_handler(msg, process_interval_input)
+    elif call.data == "start_schedule":
+        bot.answer_callback_query(call.id)
+        user_schedule = bot_state.get_schedule()
+        if 'time' not in user_schedule or 'frequency' not in user_schedule:
+            bot.send_message(chat_id, "Сначала установите и время, и интервал публикаций.")
+            return
+        scheduled_time = user_schedule['time']
+        frequency = user_schedule['frequency']
+        #schedule_post(chat_id, scheduled_time, frequency)
+        #TODO go to make
+        bot.send_message(chat_id, f"Расписание установлено.\nПервая публикация в {scheduled_time.strftime('%H:%M')}, затем каждые {frequency} минут.")
+
+def process_time_input(message):
+    chat_id = message.chat.id
+    try:
+        now = datetime.now()
+        input_time = datetime.strptime(message.text, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+        # Если введённое время уже прошло, берем время следующего дня
+        if input_time < now:
+            input_time += timedelta(days=1)
+        schedule_data = bot_state.get_schedule()
+        schedule_data['time'] = input_time
+        bot.send_message(chat_id, f"Время установлено на {input_time.strftime('%H:%M')}.")
+    except Exception as e:
+        bot.send_message(chat_id, f"Ошибка ввода времени: {e}. Попробуйте снова.")
+
+def process_interval_input(message):
+    chat_id = message.chat.id
+    try:
+        interval = int(message.text)
+        schedule_data = bot_state.get_schedule()
+        schedule_data['frequency'] = interval
+        bot.send_message(chat_id, f"Интервал публикаций установлен на {interval} минут.")
+    except Exception as e:
+        bot.send_message(chat_id, f"Ошибка ввода интервала: {e}. Попробуйте снова.")
+
 
 @bot.callback_query_handler(func=lambda call: call.data == "post")
 def callback_post_handler(call):

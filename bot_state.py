@@ -7,6 +7,7 @@ class BotState:
     post = None
     image_url = None
     is_topic_await = False
+    schedule_data = {} # {'time': datetime, 'frequency': int}
 
     def set_group_id(self, id: int):
         self.GROUP_CHAT_ID = id
@@ -37,5 +38,12 @@ class BotState:
     def get_is_topic_await(self):
         return self.is_topic_await
 
+    def set_schedule(self, schedule):
+        self.schedule_data = schedule
+    
+    def get_schedule(self):
+        return self.schedule_data
+
    
+
 
