@@ -41,19 +41,68 @@ def callback_post_handler(call):
     bot_state.set_post(post, image_url)
     bot_commands.add_post_commands(call.message)
 		
+@bot.callback_query_handler(func=lambda call: call.data == "text")
+def callback_post_handler(call):
+    bot.send_message(call.message.chat.id, "Генерирую текст, пожалуйста подождите...")
+    bot.answer_callback_query(call.id)
+    # To tread?
+    text = post_generator.generate_post()
+    bot.send_message(call.message.chat.id, text)
+    bot_state.set_text(text)
+    bot_commands.add_text_commands(call.message)
+
+@bot.callback_query_handler(func=lambda call: call.data == "preview")
+def callback_preview_handler(call):
+    text, image = bot_state.get_post()
+    bot.send_photo(call.message.chat.id, image, text)
+    bot_commands.add_preview_commands(call.message)
+
 @bot.callback_query_handler(func=lambda call: call.data == "publish")
 def callback_publish_handler(call):
-	bot.send_message(call.message.chat.id, "Публикую...")
-	post, image = bot_state.get_post()
-	if post is None: 
-		bot.send_message(call.message.chat.id, "Сообщение не может быть отправлено в группу из за того, что пост не сохранен.")
-		bot.answer_callback_query(call.id)
-		return
-	
-	group_id = bot_state.get_group_id()
-	bot.send_photo(group_id, image, post)
-	bot.send_message(call.message.chat.id, "Сообщение отправлено в группу.")
-	bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id, "Публикую...")
+    post, image = bot_state.get_post()
+    if post is None: 
+        bot.send_message(call.message.chat.id, "Сообщение не может быть отправлено в группу из за того, что пост не сохранен.")
+        bot.answer_callback_query(call.id)
+        return
+    
+    group_id = bot_state.get_group_id()
+    bot.send_photo(group_id, image, post)
+    bot.send_message(call.message.chat.id, "Сообщение отправлено в группу.")
+    bot.answer_callback_query(call.id)
+    bot_state.clear_state()
+
+@bot.callback_query_handler(func=lambda call: call.data == "photo")
+def callback_photo_handler(call):
+    bot.send_message(call.message.chat.id, "Загрузи свои фото")
+    bot.answer_callback_query(call.id)
+
+@bot.callback_query_handler(func=lambda call: call.data == "topic")
+def callback_topic_handler(call):
+    bot.send_message(call.message.chat.id, "Задай тему и я сгенерирую тебе пост")
+    bot_state.set_is_topic_await(True)
+    bot.answer_callback_query(call.id)
+		
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    # Берём последний элемент для максимального качества
+    file_id = message.photo[-1].file_id
+    bot_state.set_image(file_id)
+    bot_commands.add_image_commands(message)
+
+@bot.message_handler(func=lambda message: True)
+def handle_all_messages(message):
+    is_topic_await = bot_state.get_is_topic_await()
+    if is_topic_await == False:
+         return
+         
+    bot_state.set_is_topic_await(False)
+    bot.send_message(message.chat.id, "Генерирую текст, пожалуйста подождите...")
+
+    text = post_generator.generate_post(additional_topic=message) #todo может добавить фильтрацию?
+    bot.send_message(message.chat.id, text)
+    bot_state.set_text(text)
+    bot_commands.add_text_commands(message)  
 
 if __name__ == '__main__':
 	bot.polling(none_stop=True)

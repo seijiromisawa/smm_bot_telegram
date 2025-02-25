@@ -9,12 +9,12 @@ class PostGenerator:
         self.tone = tone
         self.topic = topic
 
-    def generate_post(self) -> str:
+    def generate_post(self, additional_topic: str = "") -> str:
         response = self.client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "Ты высококвалифицированный SMM специалист, который будет помогать в генерации текста для постов с заданной теме и заданным тоном."},
-                {"role": "user", "content": f"Сгенерируй пост для соцсетей с темой {self.topic}, используя тон: {self.tone}. Уложись в одно предложение. Не используй темы о политике, религии и экстремизме."}
+                {"role": "user", "content": f"Сгенерируй пост для соцсетей с темой {self.topic} и используй эти уточнения {additional_topic}, используя тон: {self.tone}. Уложись в одно предложение. Не используй темы о политике, религии и экстремизме."}
             ]
         )
         print(response.choices[0].message.content)

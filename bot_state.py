@@ -6,6 +6,7 @@ class BotState:
     GROUP_CHAT_ID = -4617512472
     post = None
     image_url = None
+    is_topic_await = False
 
     def set_group_id(self, id: int):
         self.GROUP_CHAT_ID = id
@@ -17,10 +18,24 @@ class BotState:
         self.post = post
         self.image_url = image_url
 
+    def set_image(self, image_url: str):
+        self.image_url = image_url
+
+    def set_text(self, text: str):
+        self.post = text
+
     def get_post(self) -> Tuple[str, str]:
         return self.post, self.image_url
     
     def clear_state(self):
         self.image_url = None
         self.post = None
+
+    def set_is_topic_await(self, v: bool):
+        self.is_topic_await = v
+
+    def get_is_topic_await(self):
+        return self.is_topic_await
+
    
+
