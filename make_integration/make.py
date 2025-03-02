@@ -3,7 +3,7 @@ import json
 from make_integration.data import Data 
 
 class Make:
-  webhook_url = "https://hook.us1.make.com/bc2bfcuvvq057ttm464snwzt7niz6pcf"
+  webhook_url = "https://hook.us1.make.com/4jw6vv9lsjxyvunans2lrbaqvvbgolwe"
   
   def make_hook(self, data: Data):
     # Convert data to JSON and print it

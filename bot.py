@@ -1,13 +1,13 @@
 # read env
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+from flows.scheduler_flow import SchedulerFlow
 from make_integration.data import Data
 import telebot
 from bot_commands import BotCommands
 from bot_state import BotState
 from make_integration.make import Make
-from make_integration.fast_cron import FastCron
+from cheduler.fast_cron import FastCron
 from generators.post_generator import PostGenerator
 from generators.image_generator import ImageGenerator
 import make_integration.prompts as prompts
@@ -21,6 +21,7 @@ bot_state = BotState()
 make = Make()
 fast_cron_key = os.getenv('FAST_CRON_KEY')
 fast_cron = FastCron(fast_cron_key)
+scheduler_flow = SchedulerFlow(bot, fast_cron, Data(), make.webhook_url, bot_commands)
 
 openai_key = os.getenv('OPENAI_API_KEY')
 post_generator = PostGenerator(openai_key, prompts.tone, prompts.topic)
@@ -35,69 +36,16 @@ def send_welcome(message):
         "что писать просто задай мне тему для поста и я пришлю тебе варианты для поста.")
     )
     bot_commands.create_commands(message)
-    list = fast_cron.get_cron_list()
-    print(list)
-    fast_cron.cron_delete(17909944)
 
 @bot.callback_query_handler(func=lambda call: call.data == "timer")
 def callback_timer_handler(call):
-    bot.send_message(call.message.chat.id, "Установи время и частоту публикаций")
-    bot_commands.add_scheduler(call.message)
+    bot_commands.add_set_start_time(call.message)
 
 @bot.callback_query_handler(func=lambda call: call.data in ["set_time", "set_interval", "start_schedule"])
 def callback_schedule(call):
     chat_id = call.message.chat.id
-
-    if call.data == "set_time":
-        bot.answer_callback_query(call.id)
-        msg = bot.send_message(chat_id, "Введите время для первой публикации в формате ЧЧ:ММ (например, 15:30):")
-        bot.register_next_step_handler(msg, process_time_input)
-    elif call.data == "set_interval":
-        bot.answer_callback_query(call.id)
-        msg = bot.send_message(chat_id, "Введите интервал публикаций в минутах (например, 60):")
-        bot.register_next_step_handler(msg, process_interval_input)
-    elif call.data == "start_schedule":
-        bot.answer_callback_query(call.id)
-        user_schedule = bot_state.get_schedule()
-        if 'time' not in user_schedule or 'frequency' not in user_schedule:
-            bot.send_message(chat_id, "Сначала установите и время, и интервал публикаций.")
-            return
-        scheduled_time = user_schedule['time']
-        frequency = user_schedule['frequency']
-
-        data = Data()
-        data.schedule.frequency = "RRULE:FREQ=DAILY;"
-        data.schedule.time = scheduled_time
-        #make.make_hook(data)
-
-        
-
-        bot.send_message(chat_id, f"Расписание установлено.\nПервая публикация в {scheduled_time.strftime('%H:%M')}, затем каждые {frequency} минут.")
-
-def process_time_input(message):
-    chat_id = message.chat.id
-    try:
-        now = datetime.now()
-        input_time = datetime.strptime(message.text, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
-        # Если введённое время уже прошло, берем время следующего дня
-        if input_time < now:
-            input_time += timedelta(days=1)
-        schedule_data = bot_state.get_schedule()
-        schedule_data['time'] = input_time
-        bot.send_message(chat_id, f"Время установлено на {input_time.strftime('%H:%M')}.")
-    except Exception as e:
-        bot.send_message(chat_id, f"Ошибка ввода времени: {e}. Попробуйте снова.")
-
-def process_interval_input(message):
-    chat_id = message.chat.id
-    try:
-        interval = int(message.text)
-        schedule_data = bot_state.get_schedule()
-        schedule_data['frequency'] = interval
-        bot.send_message(chat_id, f"Интервал публикаций установлен на {interval} минут.")
-    except Exception as e:
-        bot.send_message(chat_id, f"Ошибка ввода интервала: {e}. Попробуйте снова.")
-
+    data = Data()
+    scheduler_flow.setup_flow(call, chat_id, data.schedule)
 
 @bot.callback_query_handler(func=lambda call: call.data == "post")
 def callback_post_handler(call):

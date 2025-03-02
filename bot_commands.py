@@ -57,14 +57,26 @@ class BotCommands:
         markup.add(btn_post, btn_text)
         self.bot.send_message(message.chat.id, "Выбери следующий шаг:", reply_markup=markup)
 
-    def add_scheduler(self, message):
+    def add_set_start_time(self, message):
         chat_id = message.chat.id
         
         markup = types.InlineKeyboardMarkup(row_width=1)
         btn_time = types.InlineKeyboardButton("Установить время", callback_data="set_time")
-        btn_interval = types.InlineKeyboardButton("Установить интервал", callback_data="set_interval")
-        btn_start = types.InlineKeyboardButton("Запустить расписание", callback_data="start_schedule")
-        markup.add(btn_time, btn_interval, btn_start)
+        markup.add(btn_time)
         
-        self.bot.send_message(chat_id, "Панель настройки публикаций:", reply_markup=markup)
+        self.bot.send_message(chat_id, "Установи время старта публикации:", reply_markup=markup)
+
+    def add_start_scheduler(self, message):
+        chat_id = message.chat.id
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        btn_start = types.InlineKeyboardButton("Запустить расписание", callback_data="start_schedule")
+        markup.add(btn_start)
+        self.bot.send_message(chat_id, "Запускаем? ", reply_markup=markup)    
+
+    def add_set_interval(self, message):
+        chat_id = message.chat.id
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        btn_interval = types.InlineKeyboardButton("Установить интервал", callback_data="set_interval")
+        markup.add(btn_interval)
+        self.bot.send_message(chat_id, "Теперь установи частоту публикаций: ", reply_markup=markup)    
 
