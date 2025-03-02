@@ -29,6 +29,21 @@ class SchedulerFlow:
         elif call.data == "start_schedule":
             self.__send_setup_schedule_message(call, chat_id, schedule_data)
   
+    def remove_flow(self, call): 
+        self.bot.answer_callback_query(call.id)
+        list = self.cron.get_cron_list()
+        ids = [item['id'] for item in list['data']]
+        for id in ids:
+            self.cron.cron_delete(id)
+        
+        self.bot.send_message(call.message.chat.id, "Расписание удалено.")
+        self.commands.create_commands(call.message, False)
+    
+    def get_flow_count(self) -> int:
+        list = self.cron.get_cron_list()
+        ids = [item['id'] for item in list['data']]
+        return len(ids)
+    
     def __process_time_input(self, message, schedule_data: SchedulerData):
         chat_id = message.chat.id
         try:
@@ -48,7 +63,10 @@ class SchedulerFlow:
         try:
             interval = int(message.text)
             cronjob_builder = CronJobBuilder()
+            
             schedule_data.frequency = cronjob_builder.build_cron_expression(interval)
+            schedule_data.interval = interval
+
             self.bot.send_message(chat_id, f"Интервал публикаций установлен на {interval} минут.")
             self.commands.add_start_scheduler(message)
         except Exception as e:
@@ -72,12 +90,7 @@ class SchedulerFlow:
 
         scheduled_time = schedule_data.time
         frequency = schedule_data.frequency
-
-        list = self.cron.get_cron_list()
-        print(list["data"][0]["id"])
-        #fast_cron.cron_delete(list["data"][0]["id"])
-        response = self.cron.cron_create(self.callback_url, scheduled_time, frequency, self.data.to_dict())
-        print(response)
-
-        self.bot.send_message(chat_id, f"Расписание установлено.\nПервая публикация в {scheduled_time.strftime('%H:%M')}, затем каждые {frequency} минут.")    
+        interval = schedule_data.interval
+        self.cron.cron_create(self.callback_url, scheduled_time, frequency, self.data.to_dict())
+        self.bot.send_message(chat_id, f"Расписание установлено.\nПервая публикация в {scheduled_time.strftime('%H:%M')}, затем каждые {interval} минут.")    
      

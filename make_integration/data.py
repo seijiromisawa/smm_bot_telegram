@@ -3,12 +3,14 @@ import make_integration.prompts as prompts
 
 class SchedulerData:
     time: datetime
-    frequency: int
+    frequency: str
+    interval: int
 
     def to_dict(self):
         return {
             'time': self.time.isoformat() if self.time else None,
-            'frequency': self.frequency
+            'frequency': self.frequency,
+            "interval": self.interval
         }
 
 class PromptData:

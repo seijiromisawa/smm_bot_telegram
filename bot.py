@@ -31,11 +31,16 @@ image_generator = ImageGenerator(openai_key)
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.reply_to(message, text = (
-        "Привет! Я бот для создания контента для травел блогеров. Я помогу тебе создать" 
+        "Привет! Я бот для создания контента для травел блогеров. Я помогу тебе создать " 
         "посты для твоего блога. Просто загрузи сюда картинку и опиши пост. Если не знаешь "
-        "что писать просто задай мне тему для поста и я пришлю тебе варианты для поста.")
+        "что писать, просто нажми 'сгенерировать пост' и я пришлю тебе вариант готового поста.")
     )
-    bot_commands.create_commands(message)
+    count = scheduler_flow.get_flow_count()
+    show_stop_timer = False
+    if (count > 0):
+        show_stop_timer = True
+
+    bot_commands.create_commands(message, show_stop_timer)
 
 @bot.callback_query_handler(func=lambda call: call.data == "timer")
 def callback_timer_handler(call):
@@ -46,6 +51,10 @@ def callback_schedule(call):
     chat_id = call.message.chat.id
     data = Data()
     scheduler_flow.setup_flow(call, chat_id, data.schedule)
+
+@bot.callback_query_handler(func=lambda call: call.data == "stop_schedule")
+def callback_schedule(call):
+    scheduler_flow.remove_flow(call)
 
 @bot.callback_query_handler(func=lambda call: call.data == "post")
 def callback_post_handler(call):
