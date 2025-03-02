@@ -2,33 +2,42 @@
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+from make_integration.data import Data
 import telebot
 from bot_commands import BotCommands
 from bot_state import BotState
-from flow_controller import FlowController
-from post_generator import PostGenerator
-from image_generator import ImageGenerator
+from make_integration.make import Make
+from make_integration.fast_cron import FastCron
+from generators.post_generator import PostGenerator
+from generators.image_generator import ImageGenerator
+import make_integration.prompts as prompts
 
+ 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 bot_commands = BotCommands(bot)
 bot_state = BotState()
+make = Make()
+fast_cron_key = os.getenv('FAST_CRON_KEY')
+fast_cron = FastCron(fast_cron_key)
 
-flow_controller = FlowController()
 openai_key = os.getenv('OPENAI_API_KEY')
-post_generator = PostGenerator(openai_key, tone="Профессиональный травел блогер, котороый делиться своим опытом", topic="Путишествия. Травел блог.")
+post_generator = PostGenerator(openai_key, prompts.tone, prompts.topic)
 image_generator = ImageGenerator(openai_key)
 
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-	bot.reply_to(message, text = (
-		"Привет! Я бот для создания контента для травел блогеров. Я помогу тебе создать" 
-		"посты для твоего блога. Просто загрузи сюда картинку и опиши пост. Если не знаешь "
-		"что писать просто задай мне тему для поста и я пришлю тебе варианты для поста.")
-	)
-	bot_commands.create_commands(message)
+    bot.reply_to(message, text = (
+        "Привет! Я бот для создания контента для травел блогеров. Я помогу тебе создать" 
+        "посты для твоего блога. Просто загрузи сюда картинку и опиши пост. Если не знаешь "
+        "что писать просто задай мне тему для поста и я пришлю тебе варианты для поста.")
+    )
+    bot_commands.create_commands(message)
+    list = fast_cron.get_cron_list()
+    print(list)
+    fast_cron.cron_delete(17909944)
 
 @bot.callback_query_handler(func=lambda call: call.data == "timer")
 def callback_timer_handler(call):
@@ -55,8 +64,14 @@ def callback_schedule(call):
             return
         scheduled_time = user_schedule['time']
         frequency = user_schedule['frequency']
-        #schedule_post(chat_id, scheduled_time, frequency)
-        #TODO go to make
+
+        data = Data()
+        data.schedule.frequency = "RRULE:FREQ=DAILY;"
+        data.schedule.time = scheduled_time
+        #make.make_hook(data)
+
+        
+
         bot.send_message(chat_id, f"Расписание установлено.\nПервая публикация в {scheduled_time.strftime('%H:%M')}, затем каждые {frequency} минут.")
 
 def process_time_input(message):
