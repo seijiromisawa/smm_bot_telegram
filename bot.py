@@ -27,8 +27,17 @@ openai_key = os.getenv('OPENAI_API_KEY')
 post_generator = PostGenerator(openai_key, prompts.tone, prompts.topic)
 image_generator = ImageGenerator(openai_key)
 
+def error_handler(func):
+    def wrapper(message):
+        try:
+            func(message)
+        except Exception as e:
+            print.exception("Ошибка в обработчике:")
+            # Дополнительно можно уведомить администратора
+    return wrapper
 
 @bot.message_handler(commands=['start'])
+@error_handler
 def send_welcome(message):
     bot.reply_to(message, text = (
         "Привет! Я бот для создания контента для травел блогеров. Я помогу тебе создать " 
@@ -43,20 +52,24 @@ def send_welcome(message):
     bot_commands.create_commands(message, show_stop_timer)
 
 @bot.callback_query_handler(func=lambda call: call.data == "timer")
+@error_handler
 def callback_timer_handler(call):
     bot_commands.add_set_start_time(call.message)
 
 @bot.callback_query_handler(func=lambda call: call.data in ["set_time", "set_interval", "start_schedule"])
+@error_handler
 def callback_schedule(call):
     chat_id = call.message.chat.id
     data = Data()
     scheduler_flow.setup_flow(call, chat_id, data.schedule)
 
 @bot.callback_query_handler(func=lambda call: call.data == "stop_schedule")
+@error_handler
 def callback_schedule(call):
     scheduler_flow.remove_flow(call)
 
 @bot.callback_query_handler(func=lambda call: call.data == "post")
+@error_handler
 def callback_post_handler(call):
     bot.send_message(call.message.chat.id, "Генерирую, пожалуйста подождите...")
     bot.answer_callback_query(call.id)
@@ -69,6 +82,7 @@ def callback_post_handler(call):
     bot_commands.add_post_commands(call.message)
 		
 @bot.callback_query_handler(func=lambda call: call.data == "text")
+@error_handler
 def callback_post_handler(call):
     bot.send_message(call.message.chat.id, "Генерирую текст, пожалуйста подождите...")
     bot.answer_callback_query(call.id)
@@ -79,12 +93,14 @@ def callback_post_handler(call):
     bot_commands.add_text_commands(call.message)
 
 @bot.callback_query_handler(func=lambda call: call.data == "preview")
+@error_handler
 def callback_preview_handler(call):
     text, image = bot_state.get_post()
     bot.send_photo(call.message.chat.id, image, text)
     bot_commands.add_preview_commands(call.message)
 
 @bot.callback_query_handler(func=lambda call: call.data == "publish")
+@error_handler
 def callback_publish_handler(call):
     bot.send_message(call.message.chat.id, "Публикую...")
     post, image = bot_state.get_post()
@@ -100,17 +116,20 @@ def callback_publish_handler(call):
     bot_state.clear_state()
 
 @bot.callback_query_handler(func=lambda call: call.data == "photo")
+@error_handler
 def callback_photo_handler(call):
     bot.send_message(call.message.chat.id, "Загрузи свои фото")
     bot.answer_callback_query(call.id)
 
 @bot.callback_query_handler(func=lambda call: call.data == "topic")
+@error_handler
 def callback_topic_handler(call):
     bot.send_message(call.message.chat.id, "Задай тему и я сгенерирую тебе пост")
     bot_state.set_is_topic_await(True)
     bot.answer_callback_query(call.id)
 		
 @bot.message_handler(content_types=['photo'])
+@error_handler
 def handle_photo(message):
     # Берём последний элемент для максимального качества
     file_id = message.photo[-1].file_id
@@ -118,6 +137,7 @@ def handle_photo(message):
     bot_commands.add_image_commands(message)
 
 @bot.message_handler(func=lambda message: True)
+@error_handler
 def handle_all_messages(message):
     is_topic_await = bot_state.get_is_topic_await()
     if is_topic_await == False:
@@ -130,6 +150,8 @@ def handle_all_messages(message):
     bot.send_message(message.chat.id, text)
     bot_state.set_text(text)
     bot_commands.add_text_commands(message)  
+
+bot.infinity_polling()
 
 if __name__ == '__main__':
 	bot.polling(none_stop=True)

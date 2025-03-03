@@ -52,7 +52,6 @@ class BotCommands:
     def add_text_commands(self, message: str):
         markup = types.InlineKeyboardMarkup(row_width=2)
         btn_post = types.InlineKeyboardButton("Сгенерировать еще раз", callback_data="text")
-        btn_edit = types.InlineKeyboardButton("Отредактировать", callback_data="edit_text")
         btn_preview = types.InlineKeyboardButton("Посмотреть готовый пост", callback_data="preview")
         markup.add( btn_preview, btn_post)
         self.bot.send_message(message.chat.id, "Выбери следующий шаг:", reply_markup=markup)

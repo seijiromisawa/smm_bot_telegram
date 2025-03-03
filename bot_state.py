@@ -3,7 +3,7 @@ from typing import Tuple
 
 class BotState:
   
-    GROUP_CHAT_ID = -4617512472
+    GROUP_CHAT_ID = -1002427254808
     post = None
     image_url = None
     is_topic_await = False
