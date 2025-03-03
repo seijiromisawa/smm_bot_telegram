@@ -122,18 +122,18 @@
 
 #### **6.1. Пример работы панели администратора при автоматической генерации контента**
 
-![Пример 1](./images/image1.png) ![Пример 2](./images/image2.png)
+![Пример 1](./images/image1.png) ![Пример 2](./images/image2.PNG)
 
-![Пример 3](./images/image3.png) ![Пример 4](./images/image4.png)
+![Пример 3](./images/image3.PNG) ![Пример 4](./images/image4.PNG)
 
 #### **6.2. Пример работы панели администратора при добавлении своего изображения с генерацией текста**
 
-![Пример 5](./images/image5.png)	![Пример 6](./images/image6.png)
+![Пример 5](./images/image5.PNG)	![Пример 6](./images/image6.PNG)
 
-![Пример 7](./images/image7.png) ![Пример 8](./images/image8.png)
+![Пример 7](./images/image7.PNG) ![Пример 8](./images/image8.PNG)
 
 #### **6.3. Пример работы панели администратора при задании и удалении расписания публикации авто сгенерированных постов**
 
-![Пример 9](./images/image9.png) ![Пример 10](./images/image10.png)	
+![Пример 9](./images/image9.png) ![Пример 10](./images/image10.PNG)	
 
-![Пример 11](./images/image11.png) ![Пример 12](./images/image12.png) ![Пример 13](./images/image13.png)
+![Пример 11](./images/image11.PNG) ![Пример 12](./images/image12.PNG) ![Пример 13](./images/image13.PNG)
